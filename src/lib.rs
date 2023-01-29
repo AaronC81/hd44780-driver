@@ -377,6 +377,36 @@ where
         self.write_byte(data as u8, delay)
     }
 
+    /// Sets a custom character in the CGRAM of the `HD44780`. Up to eight 5x8 custom characters are
+    /// supported, so `index` must be less than 8. Each `u8` in `data` represents a row of pixels,
+    /// from top to bottom, with the 5 least-significant bits of the byte used.
+    /// 
+    /// Once set using this method, a custom character can be written to the screen using
+    /// [write_byte](#method.write_byte) with the same index.
+    /// 
+    /// ```rust,ignore
+    /// // 5x8 rectangle
+    /// lcd.set_custom_char(0, [0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F], &mut delay)?;
+    /// lcd.write_byte(0, &mut delay)?;
+    /// ```
+    pub fn set_custom_char<D: DelayUs<u16> + DelayMs<u8>>(
+        &mut self,
+        index: u8,
+        data: [u8; 8],
+        delay: &mut D,
+    ) -> Result<()> {
+        if index >= 8 {
+            panic!("custom-char index out of range")
+        }
+
+        self.write_command(0x40 | (index << 3), delay)?;
+        for datum in data {
+            self.write_byte(datum, delay)?;
+        }
+
+        Ok(())
+    }
+
     fn write_command<D: DelayUs<u16> + DelayMs<u8>>(
         &mut self,
         cmd: u8,
